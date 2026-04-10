@@ -7,6 +7,8 @@ using LinearSolve: PETScAlgorithm, LinearCache, LinearSolve,
     OperatorAssumptions, LinearVerbosity
 using SciMLBase: LinearSolution, build_linear_solution, ReturnCode, SciMLBase
 
+LinearSolve.needs_concrete_A(::PETScAlgorithm) = true
+
 # ── MPI communicator ──────────────────────────────────────────────────────────
 
 # Default (serial) communicator resolution.  Return MPI.COMM_SELF or error if
@@ -33,7 +35,7 @@ function sparsity_pattern_changed(old_colptr, old_rowval, new_A::SparseMatrixCSC
         return true
     end
 
-    # 2. Vectorized comparison (very fast in Julia)
+    # 2. Vectorized comparison
     # This checks both sizes and element-wise equality
     return old_colptr != new_A.colptr || old_rowval != new_A.rowval
 end
@@ -452,6 +454,8 @@ function build_ksp!(pcache, petsclib, cache, alg)
 
     alg.initial_guess_nonzero &&
         LibPETSc.KSPSetInitialGuessNonzero(petsclib, pcache.ksp, LibPETSc.PetscBool(true))
+
+    alg.setup_hook !== nothing && alg.setup_hook(petsclib, pcache.ksp)
 
     pcache.nullspace_obj = build_nullspace(petsclib, alg)
     return attach_nullspace!(petsclib, pcache.petsc_A, pcache.nullspace_obj)

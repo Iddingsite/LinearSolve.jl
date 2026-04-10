@@ -105,6 +105,7 @@ struct PETScAlgorithm <: SciMLLinearSolveAlgorithm
     initial_guess_nonzero::Bool
     transposed::Bool
     ksp_options::NamedTuple
+    setup_hook::Any       # nothing | callable (petsclib, ksp) -> nothing, called after KSP creation
 
     function PETScAlgorithm(
             solver_type::Symbol = :gmres;
@@ -116,6 +117,7 @@ struct PETScAlgorithm <: SciMLLinearSolveAlgorithm
             initial_guess_nonzero::Bool = false,
             transposed::Bool = false,
             ksp_options::NamedTuple = NamedTuple(),
+            setup_hook = nothing,
         )
         Base.get_extension(@__MODULE__, :LinearSolvePETScExt) === nothing && error(
             "PETScAlgorithm requires PETSc and MPI to be loaded: `using PETSc, MPI`"
@@ -132,6 +134,7 @@ struct PETScAlgorithm <: SciMLLinearSolveAlgorithm
             prec_matrix,
             initial_guess_nonzero, transposed,
             ksp_options,
+            setup_hook,
         )
     end
 end
